@@ -16,10 +16,6 @@ import MapScreen from "./MapScreen";
 import ImageScreen from "./ImageScreen";
 import SendButtonScreen from "./SendButtonScreen";
 
-// const image = { uri: '/Users/zahra/Downloads/cool-background-2.png' };
-const image = {
-  uri: "https://images.unsplash.com/photo-1566041510394-cf7c8fe21800?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1yZWxhdGVkfDEzfHx8ZW58MHx8fHw%3D&auto=format&fit=crop&w=400&q=60",
-};
 const Separator = () => <View style={styles.separator} />;
 const mapClick = () => {
   console.log("Button pressed");
@@ -30,7 +26,7 @@ function Home() {
       <ScrollView>
         <ImageBackground
           //blurRadius={5}
-          source={image}
+          source={require("../assets/bg-image.jpg")}
           resizeMode="cover"
           style={styles.image}
         >

@@ -1,52 +1,103 @@
-import React from "react";
-import { StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import { Platform, View, StyleSheet, TextInput } from "react-native";
+import MapView, { Marker } from "react-native-maps";
+import Constants from "expo-constants";
+import * as Location from "expo-location";
 
-import MapView from "react-native-maps";
+export default function MyMap() {
+  const [location, setLocation] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
 
-//const markerImg = require("./assets/marker@2x.png");
+  useEffect(() => {
+    (async () => {
+      if (Platform.OS === "android" && !Constants.isDevice) {
+        setErrorMsg(
+          "Oops, this will not work on Snack in an Android emulator. Try it on your device!"
+        );
+        return;
+      }
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setErrorMsg("Permission to access location was denied");
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Highest,
+      });
+      setLocation(location);
+    })();
+  }, []);
+
+  let userLocation = "Waiting..";
+  if (errorMsg) {
+    userLocation = errorMsg;
+  } else if (location) {
+    userLocation = location.coords.latitude + ", " + location.coords.longitude;
+    console.log(userLocation);
+  }
+
+  return (
+    <View style={styles.container}>
+      <TextInput>{userLocation}</TextInput>
+      <MapView style={styles.map} region={location}>
+        <Marker
+          coordinate={{
+            userLocation,
+          }}
+        />
+      </MapView>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+  paragraph: {
+    fontSize: 18,
+    textAlign: "center",
+  },
   map: {
-    height: 350,
-    borderWidth: 2,
-    borderColor: "#3F51B5",
+    width: 350,
+    height: 300,
   },
 });
 
-const MyMap = (props) => (
-  <MapView
-    style={styles.map}
-    width={props.width}
-    initialRegion={{
-      latitude: 51.5216297,
-      longitude: -0.0867828,
-      latitudeDelta: 0.008,
-      longitudeDelta: 0.008,
-    }}
-    showsPointsOfInterest={false}
-  >
-    {props.markers.map((marker) => (
-      <MapView.Marker
-        key={marker.title}
-        coordinate={marker.latlng}
-        title={marker.title}
-        //image={markerImg}
-      />
-    ))}
-  </MapView>
-);
-
-Map.propTypes = {
-  markers: React.PropTypes.arrayOf(
-    React.PropTypes.shape({
-      title: React.PropTypes.string,
-      latlng: React.PropTypes.shape({
-        latitude: React.PropTypes.number,
-        longitude: React.PropTypes.number,
-      }),
-    })
-  ),
-  width: React.PropTypes.number,
+const GetCurrentLocation = async () => {
+  var provider = await Location.getProviderStatusAsync();
+  console.log("provider ", provider);
+  if (provider) {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    console.log("status", status);
+    if (status == "granted") {
+      try {
+        let { coords } = await Location.watchPositionAsync(
+          {
+            accuracy: 5,
+            enableHighAccuracy: true,
+            timeInterval: 100,
+          },
+          async (position) => {
+            //console.log("position: ", position);
+            setLatitude(position.coords.latitude);
+            setLongitude(position.coords.longitude);
+          }
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    } else {
+      Alert.alert(
+        "Permission not granted",
+        "Allow the app to use location service.",
+        [{ text: "OK" }],
+        { cancelable: false }
+      );
+    }
+  }
 };
-
-export default MyMap;

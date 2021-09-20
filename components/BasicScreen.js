@@ -1,9 +1,18 @@
-import React, { useState } from "react";
-import { Ionicons } from "react-native-vector-icons";
+import React, { useState, useEffect } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
+import { Ionicons } from "react-native-vector-icons"; // https://ionic.io
+import * as Permissions from "expo-permissions";
+import MapView, { Marker } from "react-native-maps";
+import Constants from "expo-constants";
+import * as Location from "expo-location";
+import { Formik } from "formik";
+import moment from "moment"; // https://momentjs.com
+import localization from "moment/locale/fr";
 import emailjs from "emailjs-com";
 import {
+  Alert,
   Image,
   ImageBackground,
   ScrollView,
@@ -13,34 +22,8 @@ import {
   TextInput,
   Button,
 } from "react-native";
-import { Formik } from "formik";
-import * as yup from "yup";
-import { string } from "yup/lib/locale";
-// https://momentjs.com
-import moment from "moment";
-import localization from "moment/locale/fr";
-//import DateTimeScreen from "./DateTimeScreen";
-import MapScreen from "./MapScreen";
-import ImageScreen from "./ImageScreen";
 
-// const myInputs = yup.object({
-//   description: yup.string().required().min(5),
-//   name: yup.string().required().min(8),
-//   tel: yup.number().test("0612345678", "Cant put space", (val) => {
-//     return parseInt(val) < 100000000000;
-//   }),
-// });
-// const image = { uri: '/Users/zahra/Downloads/cool-background-2.png' };
-const image = {
-  uri: "https://images.unsplash.com/photo-1566041510394-cf7c8fe21800?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1yZWxhdGVkfDEzfHx8ZW58MHx8fHw%3D&auto=format&fit=crop&w=400&q=60",
-};
 const Separator = () => <View style={styles.separator} />;
-
-// const onChange = (event, selectedDate) => {
-//   const currentDate = selectedDate || date;
-//   setShow(Platform.OS === "ios");
-//   setDate(currentDate);
-// };
 
 const onNewDateTime = (event, newTime) => {
   if (newTime != undefined) {
@@ -64,7 +47,107 @@ function BasicScreen() {
   const [selectedItem, setSelectedItem] = useState("select");
   const [date, setDate] = useState(new Date());
   const [mode, setMode] = useState("date");
+  const [image, setImage] = useState("");
+  const [location, setLocation] = useState(null);
+  const [latitude, setLatitude] = useState(45.188529);
+  const [longitude, setLongitude] = useState(5.724524);
 
+  // ***************************** Gallery
+  const galleryClick = async () => {
+    const { granted } = await Permissions.askAsync(Permissions.CAMERA_ROLL);
+    if (granted) {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+      if (!result.cancelled) {
+        let newFile = {
+          uri: result.uri,
+          type: `test /${result.uri.split(".")[1]}`,
+          name: `test.${result.uri.split(".")[1]}`,
+        };
+        handleUpload(newFile);
+      }
+    } else {
+      Alert.alert("You need to give up permission to work.");
+    }
+  };
+  // **************************** Camera
+  const cameraClick = async () => {
+    const { granted } = await Permissions.askAsync(Permissions.CAMERA);
+    if (granted) {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+      if (!result.cancelled) {
+        let newFile = {
+          uri: result.uri,
+          type: `test /${result.uri.split(".")[1]}`,
+          name: `test.${result.uri.split(".")[1]}`,
+        };
+        handleUpload(newFile);
+      }
+    } else {
+      Alert.alert("You need to give up permission to work.");
+    }
+  };
+  // **************************** Save image in cloudinary
+  const handleUpload = (file) => {
+    const result = new FormData();
+    result.append("file", file);
+    result.append("upload_preset", "simplonVille");
+    result.append("cloadName", "dvejrvs6b");
+    // https://api.cloudinary.com/v1_1/${cloudName}/upload
+    fetch("https://api.cloudinary.com/v1_1/dvejrvs6b/image/upload", {
+      method: "post",
+      body: result,
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        //console.log("imageUrl : ", JSON.stringify(result.url));
+        setImage(JSON.stringify(result.url));
+      });
+  };
+  // ************************** get User Location
+  const userLocation = async () => {
+    let provider = await Location.getProviderStatusAsync();
+    if (provider) {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status == "granted") {
+        try {
+          let location = await Location.watchPositionAsync(
+            {
+              accuracy: 5,
+              enableHighAccuracy: true,
+              timeInterval: 100,
+            },
+            async (location) => {
+              setLatitude(location.coords.latitude);
+              setLongitude(location.coords.longitude);
+            }
+          );
+        } catch (e) {
+          console.log(e);
+        }
+      } else {
+        Alert.alert(
+          "Permission not granted",
+          "Allow the app to use location service.",
+          [{ text: "OK" }],
+          { cancelable: false }
+        );
+      }
+    }
+  };
+  useEffect(() => {
+    userLocation();
+  }, []);
+  // ************************** Send Mail
   function sendMail(values) {
     const templateParams = {
       address: values.address,
@@ -74,8 +157,9 @@ function BasicScreen() {
       name: values.name,
       tel: values.tel,
       type: values.type,
+      imageUrl: image,
+      coordinate: [latitude, longitude],
     };
-
     // emailjs.send(serviceID, templateID, templateParams, userID);
     emailjs
       .send(
@@ -87,29 +171,36 @@ function BasicScreen() {
       .then(
         function (response) {
           console.log("SUCCESS!", response.status, response.text);
-          console.log(templateParams.response);
+          //console.log(templateParams.imageUrl);
         },
         function (error) {
           console.log("FAILED...", error);
         }
       );
   }
-
+  // *************************** Initialize Values
+  const initialValues = {
+    address: "",
+    datetime: moment().format("YYYY-MMM-DD LT"),
+    description: "",
+    mail: "",
+    name: "",
+    tel: "",
+    type: "",
+    imageUrl: "",
+    userLocation: "",
+  };
+  // ***************************** FORM
   return (
     <View style={styles.container}>
       <Formik
-        initialValues={{
-          address: "",
-          datetime: moment().format("YYYY-MMM-DD LT"),
-          description: "",
-          mail: "",
-          name: "",
-          tel: "",
-          type: "",
+        initialValues={initialValues}
+        onSubmit={(values, { resetForm }) => {
+          sendMail(values);
+          onsubmit.bind;
+          handleUpload.bind(values);
+          resetForm({ values: initialValues });
         }}
-        enableReinitialize={true}
-        //validationSchema={myInputs}
-        onSubmit={(values) => sendMail(values)}
       >
         {({
           handleChange,
@@ -121,7 +212,7 @@ function BasicScreen() {
           <ScrollView>
             <ImageBackground
               //blurRadius={5}
-              source={image}
+              source={require("../assets/bg-image.jpg")}
               resizeMode="cover"
               style={styles.image}
             >
@@ -132,6 +223,18 @@ function BasicScreen() {
                 />
                 <Text style={styles.text}> SIMPLON VILLE</Text>
                 <Separator />
+              </View>
+              <View style={styles.strange}>
+                <DateTimePicker
+                  testID="dateTimePicker"
+                  value={date}
+                  mode="datetime"
+                  is24Hour={true}
+                  onConfirm={handleConfirm}
+                  datetime={moment(values.datetime)}
+                  maxDate={new Date()}
+                  disabled={true}
+                />
               </View>
               <View style={styles.pickerContain}>
                 <Picker
@@ -150,26 +253,30 @@ function BasicScreen() {
                   <Picker.Item label="Autre" value="autre" />
                 </Picker>
               </View>
-              {/* <View>
-                <DateTimeScreen />
-              </View> */}
-              <View style={styles.strange}>
-                <DateTimePicker
-                  testID="dateTimePicker"
-                  value={date}
-                  mode="datetime"
-                  is24Hour={true}
-                  //onChange={onNewDateTime}
-                  onConfirm={handleConfirm}
-                  datetime={moment(values.datetime)}
-                  //handleSubmit={handleSubmit}
-                  maxDate={new Date()}
-                  //disabled={true}
-                />
+              <View style={styles.fixToButton}>
+                <Ionicons.Button
+                  style={styles.imageButton}
+                  name={image == "" ? "image-outline" : "checkmark-outline"}
+                  title="Left button"
+                  mode="contained"
+                  onPress={galleryClick}
+                >
+                  <Text style={styles.imageText}>Select Image</Text>
+                </Ionicons.Button>
+                <Ionicons.Button
+                  style={styles.imageButton}
+                  name={image == "" ? "camera-outline" : "checkmark-outline"} //Change icon condition when user choose an image or not
+                  title="Right button"
+                  mode="contained"
+                  onPress={cameraClick}
+                >
+                  <Text style={styles.imageText}>Take Image</Text>
+                </Ionicons.Button>
               </View>
               <View style={styles.input}>
                 <TextInput
                   style={styles.texting}
+                  label="Description"
                   height={100}
                   placeholder="Description"
                   multiline={true}
@@ -218,11 +325,33 @@ function BasicScreen() {
                   value={values.mail}
                 />
               </View>
-              {/* <MapScreen />
-              <ImageScreen /> */}
+              <View>
+                <MapView
+                  style={styles.map}
+                  value={values.userLocation}
+                  initialRegion={location}
+                  region={{
+                    latitude: latitude,
+                    longitude: longitude,
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01,
+                  }}
+                  showsUserLocation
+                >
+                  <Marker
+                    coordinate={{
+                      latitude: latitude,
+                      longitude: longitude,
+                    }}
+                    title="Vous etes ici"
+                    pinColor="purple"
+                  />
+                </MapView>
+              </View>
               <View style={styles.sendButton}>
                 <Button
                   title="Envoyer"
+                  color="white"
                   onPress={() => {
                     setFieldValue(
                       "datetime",
@@ -252,6 +381,9 @@ const styles = StyleSheet.create({
   image: {
     flex: 1,
     justifyContent: "center",
+  },
+  input: {
+    top: 8,
   },
   logo: {
     flex: 0.15,
@@ -305,48 +437,73 @@ const styles = StyleSheet.create({
     borderBottomColor: "#737373",
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  input: {
-    //top: -68,
-  },
   texting: {
     backgroundColor: "white",
     borderColor: "#B284BE",
+    borderWidth: 1,
     borderRadius: 5,
     //fontFamily: "Cochin",
     fontSize: 20,
     height: 40,
     justifyContent: "center",
     margin: 7,
-    left: 20,
+    left: 18,
     padding: 10,
     width: 325,
-    //top: 250,
   },
   myTime: {
-    //top: 15,
     flex: 1,
     left: 93,
   },
   sendButton: {
     width: "89%",
-    backgroundColor: "#FFCC99", //"#B284BE",
-    //top: -20,
+    backgroundColor: "#99CCFF", //"#B284BE",
+    top: 20,
     left: 20,
     borderRadius: 5,
     paddingTop: 8,
     paddingBottom: 8,
+    marginBottom: 100,
   },
   pickerContain: {
     width: 345,
-    top: 80,
     left: 15,
   },
   strange: {
     flex: 1,
-    left: 93,
+    left: 40,
+    top: 20,
     justifyContent: "center",
     marginTop: 70,
     marginBottom: 10,
+  },
+  fixToButton: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+  },
+  imageButton: {
+    color: "white",
+    backgroundColor: "#99CCFF",
+    paddingRight: 11,
+    paddingLeft: 10,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  imageText: {
+    fontFamily: "Arial",
+    color: "white",
+    fontSize: 20,
+  },
+  map: {
+    top: 10,
+    left: 25,
+    width: 325,
+    height: 300,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#B284BE",
   },
 });
 
