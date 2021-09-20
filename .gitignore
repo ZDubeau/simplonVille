@@ -1,6 +1,6 @@
 node_modules/
 .expo/
-.vscode/*
+.expo-shared/
 npm-debug.*
 *.jks
 *.p8
@@ -13,3 +13,11 @@ web-build/
 # macOS
 .DS_Store
 .env
+
+# vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
