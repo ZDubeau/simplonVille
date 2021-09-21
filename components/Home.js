@@ -196,7 +196,7 @@ function Home() {
         onSubmit={(values, { resetForm }) => {
           sendMail(values);
           handleUpload.bind(values);
-          resetForm(initialValues);
+          resetForm(initialValues); // reset page after sending mail
         }}
       >
         {({
