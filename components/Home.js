@@ -195,9 +195,8 @@ function Home() {
         initialValues={initialValues}
         onSubmit={(values, { resetForm }) => {
           sendMail(values);
-          onsubmit.bind;
           handleUpload.bind(values);
-          resetForm({ values: initialValues });
+          resetForm(initialValues);
         }}
       >
         {({
