@@ -1,9 +1,16 @@
 import React, { useState } from "react";
-import { Ionicons } from "react-native-vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
+import { Ionicons } from "react-native-vector-icons"; // https://ionic.io
+import * as Permissions from "expo-permissions";
+import { Formik } from "formik";
+// https://momentjs.com
+import moment from "moment";
+import localization from "moment/locale/fr";
 import emailjs from "emailjs-com";
 import {
+  Alert,
   Image,
   ImageBackground,
   ScrollView,
@@ -13,34 +20,19 @@ import {
   TextInput,
   Button,
 } from "react-native";
-import { Formik } from "formik";
+
 import * as yup from "yup";
 import { string } from "yup/lib/locale";
-// https://momentjs.com
-import moment from "moment";
-import localization from "moment/locale/fr";
+
 //import DateTimeScreen from "./DateTimeScreen";
 import MapScreen from "./MapScreen";
 import ImageScreen from "./ImageScreen";
 
-// const myInputs = yup.object({
-//   description: yup.string().required().min(5),
-//   name: yup.string().required().min(8),
-//   tel: yup.number().test("0612345678", "Cant put space", (val) => {
-//     return parseInt(val) < 100000000000;
-//   }),
-// });
 // const image = { uri: '/Users/zahra/Downloads/cool-background-2.png' };
 const image = {
   uri: "https://images.unsplash.com/photo-1566041510394-cf7c8fe21800?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1yZWxhdGVkfDEzfHx8ZW58MHx8fHw%3D&auto=format&fit=crop&w=400&q=60",
 };
 const Separator = () => <View style={styles.separator} />;
-
-// const onChange = (event, selectedDate) => {
-//   const currentDate = selectedDate || date;
-//   setShow(Platform.OS === "ios");
-//   setDate(currentDate);
-// };
 
 const onNewDateTime = (event, newTime) => {
   if (newTime != undefined) {
@@ -64,6 +56,7 @@ function BasicScreen() {
   const [selectedItem, setSelectedItem] = useState("select");
   const [date, setDate] = useState(new Date());
   const [mode, setMode] = useState("date");
+  const [image, setImage] = useState("");
 
   function sendMail(values) {
     const templateParams = {
@@ -74,6 +67,7 @@ function BasicScreen() {
       name: values.name,
       tel: values.tel,
       type: values.type,
+      imageUrl: values.imageUrl,
     };
 
     // emailjs.send(serviceID, templateID, templateParams, userID);
@@ -87,7 +81,7 @@ function BasicScreen() {
       .then(
         function (response) {
           console.log("SUCCESS!", response.status, response.text);
-          console.log(templateParams.response);
+          console.log(templateParams.imageUrl);
         },
         function (error) {
           console.log("FAILED...", error);
@@ -106,6 +100,7 @@ function BasicScreen() {
           name: "",
           tel: "",
           type: "",
+          //imageUrl: [""],
         }}
         enableReinitialize={true}
         //validationSchema={myInputs}
@@ -170,6 +165,7 @@ function BasicScreen() {
               <View style={styles.input}>
                 <TextInput
                   style={styles.texting}
+                  label="Description"
                   height={100}
                   placeholder="Description"
                   multiline={true}
@@ -218,8 +214,10 @@ function BasicScreen() {
                   value={values.mail}
                 />
               </View>
-              {/* <MapScreen />
-              <ImageScreen /> */}
+              {/* <MapScreen />*/}
+              <View>
+                <ImageScreen />
+              </View>
               <View style={styles.sendButton}>
                 <Button
                   title="Envoyer"
@@ -311,6 +309,7 @@ const styles = StyleSheet.create({
   texting: {
     backgroundColor: "white",
     borderColor: "#B284BE",
+    borderWidth: 1,
     borderRadius: 5,
     //fontFamily: "Cochin",
     fontSize: 20,
@@ -330,7 +329,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: "89%",
     backgroundColor: "#FFCC99", //"#B284BE",
-    //top: -20,
+    top: 20,
     left: 20,
     borderRadius: 5,
     paddingTop: 8,

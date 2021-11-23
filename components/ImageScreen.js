@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "react-native-vector-icons";
+import { Ionicons } from "react-native-vector-icons"; // https://ionic.io
 import * as Permissions from "expo-permissions";
+import { Formik } from "formik";
 import { Alert, StyleSheet, Text, View } from "react-native";
 
 function ImageScreen() {
@@ -17,7 +18,14 @@ function ImageScreen() {
         aspect: [1, 1],
         quality: 0.5,
       });
-      console.log(JSON.stringify(result));
+      if (!result.cancelled) {
+        let newFile = {
+          uri: result.uri,
+          type: `test /${result.uri.split(".")[1]}`,
+          name: `test.${result.uri.split(".")[1]}`,
+        };
+        handleUpload(newFile);
+      }
     } else {
       Alert.alert("You need to give up permission to work.");
     }
@@ -32,58 +40,82 @@ function ImageScreen() {
         aspect: [1, 1],
         quality: 0.5,
       });
-      console.log(JSON.stringify(result));
       if (!result.cancelled) {
         let newFile = {
-          uri: result,
-          type: "test/png",
-          //type: ˋtest / ${ result.uri.split(".")ˋ
+          uri: result.uri,
+          type: `test /${result.uri.split(".")[1]}`,
+          name: `test.${result.uri.split(".")[1]}`,
         };
-        handleUpload;
+        handleUpload(newFile);
       }
     } else {
       Alert.alert("You need to give up permission to work.");
     }
   };
-  const handleUpload = (image) => {
-    const data = new FormData();
-    data.append("file", image);
-    data.append("uploadPresent", "simplonVille");
-    data.append("cloadName", "dvejrvs6b");
+  const handleUpload = (file) => {
+    const result = new FormData();
+    result.append("file", file);
+    result.append("upload_preset", "simplonVille");
+    result.append("cloadName", "dvejrvs6b");
     // https://api.cloudinary.com/v1_1/${cloudName}/upload
     fetch("https://api.cloudinary.com/v1_1/dvejrvs6b/image/upload", {
       method: "post",
-      body: data,
+      body: result,
     })
       .then((res) => res.json())
-      .then((data) => {
-        console.log(JSON.stringify(data));
+      .then((result) => {
+        console.log("imageUrl : ", JSON.stringify(result.url));
+        //setImage(JSON.stringify(result.url));
       });
   };
+
+  const onSubmit = (values) => {
+    if (galleryClick() && galleryClick()) {
+      console.log(JSON.stringify(values));
+      setImage(JSON.stringify(handleUpload(values.url)));
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.fixToButton}>
-        <Ionicons.Button
-          style={styles.imageButton}
-          name="image-outline"
-          title="Left button"
-          mode="contained"
-          onPress={galleryClick}
-        >
-          <Text style={styles.imageText}>Select Image</Text>
-        </Ionicons.Button>
-        <Ionicons.Button
-          style={styles.imageButton}
-          name="camera-outline"
-          title="Right button"
-          mode="contained"
-          onPress={cameraClick}
-        >
-          <Text style={styles.imageText}>Take Image</Text>
-        </Ionicons.Button>
-      </View>
-      {/* <Button title="Select Image" onPress={selectImage} /> */}
-      {/* <Image source={{ uri: imageUri }} style={styles.photos} /> */}
+      <Formik
+        initialValues={{
+          imageUrl: "",
+        }}
+        //enableReinitialize={true}
+        onSubmit={(values) => {
+          //handleUpload;
+          onsubmit.bind;
+          handleUpload.bind(values);
+          console.log(values);
+        }}
+      >
+        {({ values, handleChange, handleSubmit }) => (
+          <View style={styles.fixToButton}>
+            <Ionicons.Button
+              style={styles.imageButton}
+              name={image == "" ? "image-outline" : "checkmark-outline"}
+              title="Left button"
+              mode="contained"
+              onPress={galleryClick}
+            >
+              <Text style={styles.imageText}>Select Image</Text>
+            </Ionicons.Button>
+            <Ionicons.Button
+              style={styles.imageButton}
+              name={image == "" ? "camera-outline" : "checkmark-outline"} //Change icon condition when user choose an image or not
+              title="Right button"
+              mode="contained"
+              onPress={cameraClick}
+            >
+              <Text style={styles.imageText}>Take Image</Text>
+            </Ionicons.Button>
+            <View>
+              <Ionicons.Button onPress={handleSubmit} />
+            </View>
+          </View>
+        )}
+      </Formik>
     </View>
   );
 }
@@ -91,15 +123,16 @@ function ImageScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    marginTop: 10,
   },
   fixToButton: {
     alignItems: "center",
-    top: 145,
+    top: 145, //put on comment later
     flexDirection: "row",
     justifyContent: "space-evenly",
   },
   imageButton: {
-    fontSize: 40,
+    fontSize: 30,
     color: "white",
     backgroundColor: "#99CCFF",
     paddingRight: 12,
@@ -111,12 +144,6 @@ const styles = StyleSheet.create({
     fontFamily: "Arial",
     color: "white",
     fontSize: 20,
-  },
-  photos: {
-    width: 145,
-    height: 145,
-    left: 35,
-    bottom: 5,
   },
 });
 

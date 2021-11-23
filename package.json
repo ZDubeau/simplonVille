@@ -8,37 +8,40 @@
     "eject": "expo eject"
   },
   "dependencies": {
-    "@react-native-community/datetimepicker": "^3.5.2",
+    "@react-native-community/datetimepicker": "3.0.4",
     "@react-native-community/hooks": "^2.6.0",
-    "@react-native-picker/picker": "1.16.1",
+    "@react-native-picker/picker": "1.9.2",
     "@react-navigation/stack": "^6.0.7",
+    "@sideway/address": "^4.1.2",
     "emailjs-com": "^3.2.0",
-    "expo": "~42.0.1",
-    "expo-image-picker": "~10.2.2",
-    "expo-location": "~12.1.2",
-    "expo-permissions": "~12.1.1",
-    "expo-status-bar": "~1.0.4",
+    "expo": "^40.0.0",
+    "expo-image-picker": "~9.2.0",
+    "expo-location": "~10.0.0",
+    "expo-permissions": "~10.0.0",
+    "expo-status-bar": "~1.0.3",
     "formik": "^2.2.9",
     "install": "^0.13.0",
+    "joi": "^17.4.2",
     "moment": "^2.29.1",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-native": "^0.64.2",
+    "react": "16.13.1",
+    "react-dom": "16.13.1",
+    "react-native": "https://github.com/expo/react-native/archive/sdk-40.0.1.tar.gz",
     "react-native-dotenv": "^3.2.0",
     "react-native-geocoder": "^0.5.0",
     "react-native-geocoding": "^0.5.0",
-    "react-native-maps": "0.28.0",
+    "react-native-maps": "0.27.1",
+    "react-native-paper": "^4.9.2",
     "react-native-vector-icons": "^8.1.0",
-    "react-native-web": "^0.17.1",
-    "react-native-webview": "11.6.2",
-    "styled-components": "^5.3.1",
+    "react-native-web": "~0.13.12",
+    "react-native-webview": "11.0.0",
+    "styled-components": "^5.2.1",
     "yup": "^0.32.9"
   },
   "resolutions": {
     "styled-components": "^5"
   },
   "devDependencies": {
-    "@babel/core": "^7.15.0"
+    "@babel/core": "~7.9.0"
   },
   "private": true
 }
